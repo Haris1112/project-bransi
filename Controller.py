@@ -7,7 +7,8 @@ Website: HappyHaris.com
 GitHub: Haris1112
 '''
 
-import pygame
+import pygame, sys
+from MenuViewer import MenuViewer
 from pygame.locals import *
 
 class Controller:
@@ -17,25 +18,42 @@ class Controller:
 	'''
 	WIDTH = 540
 	HEIGHT = 420
-	SETTINGS_FILE = "settings.txt"
-	
+	__SETTINGS_FILE = "settings.txt"
+	__keys = {}
+	__titleMenuChoices = {}
+	__settings = {}
+
 	__model = None
 	__view = None
+	__controllable = None # input object
 
-	__settings = {}
+	#Controllables
+	__titleMenuController = None
+
+	# Statistics
+	__fps = 0
+	__frames = 0
+
+	__ups = 0
+	__updates = 0
+
+	__lastStatisticGatherTime = 0
 
 	def __init__(self, model, view):
 		self.__model = model
 		self.__view = view
-		self.__loadSettings(self.SETTINGS_FILE)
-		self.__start()
 
-	def __start(self):
-		self.__model.begin()
-		self.__view.ready(self.WIDTH, self.HEIGHT, int(self.__settings['hud_size']))
+		pygame.init()
+		self.__loadSettings(self.__SETTINGS_FILE)
+
+		self.__titleMenuController = MenuViewer("Project Bransi", self.__titleMenuChoices, int(self.__settings['hud_size']), selectorType=1)
+		self.__view.ready(self.WIDTH, self.HEIGHT, self.__titleMenuController)
+		self.__setState("title")
+		
 		self.__gameLoop()
 
-	def __newGame():
+	def __newGame(self):
+		self.__setState("game")
 		self.__model.newGame(self.WIDTH, self.HEIGHT)
 
 	def __gameLoop(self):
@@ -44,6 +62,7 @@ class Controller:
 		frame_rate = int(self.__settings['frame_rate'])
 
 		step_size = 1.0 / frame_rate * 1000.0 # ms
+		time = step_size / 1000.0 # s
 		max_frame_time = 0.1 * 1000 # ms
 
 		now = pygame.time.get_ticks()
@@ -58,8 +77,11 @@ class Controller:
 
 			while(T - now >= step_size):
 				# Update game state (seconds)
-				if(self.__model.state == "game"):
-					self.__model.gameUpdate(self, step_size / 1000.0)
+				pygame.event.pump() # collect events
+				self.__manageInput(time)
+				if(self.__model.getState() == "game"):
+					self.__model.gameUpdate(self, time)
+				self.__updates += 1
 				now += step_size
 			else:
 				pygame.time.wait(10)
@@ -67,8 +89,43 @@ class Controller:
 			# Render game state
 			# interpolate_time = 1.0 / (step_size / (T - now))
 			self.__view.gameRender(self)
+			self.__frames += 1
+
+			# Statistics
+			T = pygame.time.get_ticks()
+			if(T - self.__lastStatisticGatherTime > 1000):
+				self.__fps = self.__frames
+				self.__ups = self.__updates
+				self.__frames = 0
+				self.__updates = 0
+				self.__lastStatisticGatherTime = T
+
+				# print(("FPS:" + str(self.__fps)), "UPS:" + str(self.__ups))
+
 
 	def __loadSettings(self, fileName):
+		# HARD CODED SETTINGS
+		self.__keys = {
+			pygame.K_UP 	: self.up,
+			pygame.K_w 		: self.up,
+			pygame.K_DOWN 	: self.down,
+			pygame.K_s 		: self.down,
+			pygame.K_LEFT 	: self.left,
+			pygame.K_a 		: self.left,
+			pygame.K_RIGHT 	: self.right,
+			pygame.K_d 		: self.right,
+			pygame.K_e 		: self.use,
+			pygame.K_q		: self.toggle,
+			pygame.K_f 		: self.action,
+			pygame.K_b		: self.buy,
+			pygame.K_ESCAPE : self.escape,
+		}
+
+		self.__titleMenuChoices = {
+			"New Game"	:	self.__newGame,
+			"Exit"		:	sys.exit,
+		}
+
 		array = []
 		data = {}
 
@@ -79,11 +136,39 @@ class Controller:
 
 		self.__settings = data
 
-	'''''
-	INPUT
-	'''''
-	def getMouse(self):
-		return self.getMousePosition()
+	''' INPUT '''
+	def __manageInput(self, time):
+		if not self.__controllable == None:
+			self.__controllable.tick(time)
+			inputs = pygame.key.get_pressed()
+			for key in self.__keys:
+				if inputs[key]:
+					self.__keys[key]()
+		mouse = pygame.mouse.get_pressed()
+		if mouse[0]:
+			self.primary()
+		if mouse[1]:
+			self.secondary()
+
+		if self.escape():
+			self.__model.exit()
+
+	def __setState(self, state):
+		if state == "title":
+			self.__controllable = self.__titleMenuController
+			self.__model.setState("title")
+			pygame.mouse.set_visible(True)
+		if state == "game":
+			self.__model.setState("game")
+			pygame.mouse.set_visible(False)
+			self.__conrollable = self.__model.player
+		if state == "gameOver":
+			self.__controllable = None
+			self.__model.setState("gameOver")
+			pygame.mouse.set_visible(True)
+
+	def setMousePosition(self, x, y):
+		pygame.mouse.set_pos((x, y))
 
 	def getMousePosition(self):
 		return pygame.mouse.get_pos()
@@ -91,23 +176,36 @@ class Controller:
 	def __keyPressed(self, key):
 		return pygame.key.get_pressed()[key]
 
+	''' KEYS & MOUSE'''
 	def up(self):
-		return self.__keyPressed(pygame.K_UP) or self.__keyPressed(pygame.K_w)
+		self.__controllable.up()
 
 	def down(self):
-		return self.__keyPressed(pygame.K_DOWN) or self.__keyPressed(pygame.K_s)
+		self.__controllable.down()
 
 	def left(self):
-		return self.__keyPressed(pygame.K_LEFT) or self.__keyPressed(pygame.K_a)
+		self.__controllable.left()
 
 	def right(self):
-		return self.__keyPressed(pygame.K_RIGHT) or self.__keyPressed(pygame.K_d)
+		self.__controllable.right()
 
 	def escape(self):
 		return self.__keyPressed(pygame.K_ESCAPE)
 
-	def mouse1(self):
-		return pygame.mouse.get_pressed()[0]
+	def primary(self):
+		self.__controllable.primary()
 
-	def mouse2(self):
-		return pygame.mouse.get_pressed()[1]
+	def secondary(self):
+		self.__controllable.secondary()
+
+	def action(self):
+		self.__controllable.action()
+
+	def toggle(self):
+		self.__controllable.toggle()
+
+	def use(self):
+		self.__controllable.use()
+
+	def buy(self):
+		self.__controllable.buy()

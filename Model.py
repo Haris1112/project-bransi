@@ -12,8 +12,8 @@ from entity import Player, Monster, World
 class Model:
 
 	# Game state
-	__running = False
-	state = ""
+	__running = True
+	__state = ""
 
 	# Game data
 	player = None
@@ -30,15 +30,11 @@ class Model:
 	def __init__(self):
 		pass
 
-	def begin(self):
-		self.state = "title"
-		self.__running = True
-
 	def newGame(self, width, height):
-		self.player = Player(10, speed = 100)
 		self.world = World(width, height)
+		self.player = Player(10, speed=100)
 		self.monsters = []
-		self.__running = True
+		self.state = "game"
 
 	def isRunning(self):
 		return self.__running
@@ -47,9 +43,13 @@ class Model:
 	def gameUpdate(self, controller, delta):
 		if controller.escape():
 			self.__running = False
-			print("done")
 		self.player.update(controller, delta, self.world)
-		pass
+
+	def setState(self, state):
+		self.__state = state
 
 	def getState(self):
-		return self.state
+		return self.__state
+
+	def exit(self):
+		self.__running = False
