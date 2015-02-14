@@ -53,8 +53,8 @@ class Controller:
 		self.__gameLoop()
 
 	def __newGame(self):
-		self.__setState("game")
 		self.__model.newGame(self.WIDTH, self.HEIGHT)
+		self.__setState("game")
 
 	def __gameLoop(self):
 		# This is an edited version of the following general game loop:
@@ -68,6 +68,7 @@ class Controller:
 		now = pygame.time.get_ticks()
 		while self.__model.isRunning():
 			if QUIT in [e.type for e in pygame.event.get()]:
+				print("QUITTED via QUIT event in pygame event pool.")
 				break
 
 			T = pygame.time.get_ticks()
@@ -80,7 +81,7 @@ class Controller:
 				pygame.event.pump() # collect events
 				self.__manageInput(time)
 				if(self.__model.getState() == "game"):
-					self.__model.gameUpdate(self, time)
+					self.__model.gameUpdate(time)
 				self.__updates += 1
 				now += step_size
 			else:
@@ -144,28 +145,34 @@ class Controller:
 			for key in self.__keys:
 				if inputs[key]:
 					self.__keys[key]()
-		mouse = pygame.mouse.get_pressed()
-		if mouse[0]:
-			self.primary()
-		if mouse[1]:
-			self.secondary()
+			mouse = pygame.mouse.get_pressed()
+			if mouse[0]:
+				self.primary()
+			if mouse[1]:
+				self.secondary()
 
 		if self.escape():
 			self.__model.exit()
 
 	def __setState(self, state):
+		print("SETTING STATE:\t" + state)
 		if state == "title":
-			self.__controllable = self.__titleMenuController
+			self.__setControllable(self.__titleMenuController)
 			self.__model.setState("title")
 			pygame.mouse.set_visible(True)
 		if state == "game":
 			self.__model.setState("game")
+			self.__model.unPause()
 			pygame.mouse.set_visible(False)
-			self.__conrollable = self.__model.player
+			self.__setControllable(self.__model.player)
 		if state == "gameOver":
-			self.__controllable = None
+			self.__setControllable(None)
 			self.__model.setState("gameOver")
 			pygame.mouse.set_visible(True)
+
+	def __setControllable(self, controllable):
+		print("SETTING CONTROLLABLE\t" + str(type(controllable)))
+		self.__controllable = controllable
 
 	def setMousePosition(self, x, y):
 		pygame.mouse.set_pos((x, y))

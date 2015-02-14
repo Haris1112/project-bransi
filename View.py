@@ -15,6 +15,9 @@ class View:
 	__model = None
 	__surface = None
 
+	WIDTH = 0
+	HEIGHT = 0
+
 	# Screens
 	titleMenu = None
 	
@@ -26,9 +29,8 @@ class View:
 	bloodorange = Color(230, 220, 30, 255)
 	
 	# Fonts
-	font = None
-	font2 = None
-	selector1 = "> "
+	__font12 = None
+	__font16 = None
 
 	# Timing
 	i = 0
@@ -38,8 +40,13 @@ class View:
 		self.__model = model
 
 	def ready(self, width, height, titleMenu):
+		self.WIDTH = width
+		self.HEIGHT = height
 		self.__surface = pygame.display.set_mode((width, height))
 		self.titleMenu = titleMenu
+
+		self.__font12 = pygame.font.SysFont("monospace", 12)
+		self.__font16 = pygame.font.SysFont("monospace", 16)
 
 	def gameRender(self, controller):
 		screen = self.__surface
@@ -51,10 +58,26 @@ class View:
 		if self.__model.getState() == "title" and not self.titleMenu == None:
 			screen.blit(self.titleMenu.getMenuSurface(), (0, 0))
 		elif self.__model.getState() == "game":
+			#Draw Monsters
+			for monster in self.__model.world.monsters:
+				pygame.draw.rect(screen, self.gray, monster.getBounds())
+
+			# Draw Player, Cursor
 			pygame.draw.rect(screen, self.gray, self.__model.player.getBounds())
 			pygame.draw.rect(screen, self.bloodred, Rect(mouse[0], mouse[1], 2, 2))
-		else: # Game Over
-			label = self.font.render("Game-Over", 1, self.bloodorange)
+
+			# Draw HUD
+			health = self.__font12.render("|"*self.__model.player.health, 1, self.bloodred)
+			armor = self.__font12.render("|"*self.__model.player.armor, 1, self.bloodorange)
+			money = self.__font16.render("{:,}".format(self.__model.player.money), 1, self.white)
+			numMonsters = self.__font16.render(str(len(self.__model.world.monsters)), 1, self.white)
+
+			screen.blit(money, (10, 10))
+			screen.blit(health, (10, 10 + money.get_height()))
+			screen.blit(armor, (10, 10 + health.get_height() + money.get_height()))
+			screen.blit(numMonsters, (10, self.HEIGHT - numMonsters.get_height() - 10))
+		elif self.__model.getState() == "gameOver": # Game Over
+			label = self.__font16.render("Game-Over", 1, self.bloodorange)
 			screen.blit(label, (10, 100))
 
 		pygame.display.flip()
