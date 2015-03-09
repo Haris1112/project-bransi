@@ -1,5 +1,6 @@
 import relations
 import random
+from gameMath import *
 from pygame import Rect
 from Controllable import Controllable
 
@@ -9,6 +10,39 @@ def overrides(interface_class):
 		assert(method.__name__ in dir(interface_class))
 		return method
 	return overrider
+
+class ParticleManager:
+	particles = []
+
+	def __init__(self):
+		pass
+
+	def addParticle(self, particle):
+		self.particles.append(particle)
+
+	def update(self, delta):
+		for p in self.particles:
+			p.update(delta)
+			if(p.life <= 0):
+				self.particles.remove(p)
+
+class Particle:
+	life = 0 # Seconds
+	size = 0
+	speed = 0
+	pos = None
+	vel = None
+
+	def __init__(self, life=2, size=0, speed=10, x=0, y=0):
+		self.life = life
+		self.size = size
+		self.speed = speed
+		self.pos = Vector2(x, y)
+		self.vel = Vector2.randomUnitVector().scalar(self.speed)
+
+	def update(self, time):
+		self.pos = self.pos.add(self.vel)
+		self.life -= time
 
 class Player(Controllable):
 	speed = 0
@@ -21,22 +55,29 @@ class Player(Controllable):
 	armor = 10
 
 	__delta = 0
+	__model = None
 	__world = None
 
-	def __init__(self, world, size, x=0, y=0, speed=1):
+	def __init__(self, model, world, size, x=0, y=0, speed=1):
+		self.__model = model
 		self.__world = world
 		self.size = size
 		self.x = x
 		self.y = y
 		self.speed = speed
 	
+	def shoot(self):
+		x = self.__model.mX
+		y = self.__model.mY
+		self.__model.particleManager.addParticle(Particle(x=x, y=y))
+
 	def getBounds(self):
 		return Rect(self.x, self.y, self.size, self.size)
 
 	def update(self, input, delta, world):
 		pass
 
-	def getAim(self, mouseX, mouseY):
+	def getAngle(self, mouseX, mouseY):
 		pass
 
 	@overrides(Controllable)
@@ -91,8 +132,80 @@ class Player(Controllable):
 	def buy(self):
 		pass
 
-class Item:
-	pass
+class Inventory:
+	selected_weapon = 0
+
+	weapons = []
+	ammo = []
+
+	def __init__(self):
+		# Assault, Pistol, Grenades
+		self.weapons = [None, None, None]
+		self.ammo = [0, 0, 0]
+
+	def nextWeapon(self):
+		self.selected_weapon += 1
+		if self.selected_weapon >= self.weapons.length:
+			self.selected_weapon = 0
+
+	def update(self, time):
+		for w in self.weapons:
+			if(w is not None): 
+				w.update(time)
+
+class Weapon:
+	ammo_type = -1
+	reload_time = -1
+	reloading = False
+	bps = -1 # Bullets per second
+	magazine = 0
+	magazine_size = 0
+
+	def __init__(self, ammo_type, bps, magazine_size, reload_time):
+		self.ammo_type = ammo_type
+		self.reload_time = reload_time
+		self.bps = bps
+		self.magazine = 0
+		self.magazine_size = magazine_size
+				
+	# Returns -1 	if unable to shoot
+	#				else a number which indicates magnitude of recoil
+	def shoot(self):
+		if(self.time >= 1 / self.bps and not self.reloading):
+			if(self.magazine > 0):
+				self.time = 0
+				self.magazine -= 1
+				return self.recoil()
+			else:
+				self.emptyNoise()
+				return -1
+
+	def recoil(self):
+		return 3
+
+	def emptyNoise(self):
+		# TODO Play no ammo noise, *click*
+		return
+
+	def reload(self, ammo):
+		if(ammo >= self.magazine_size):
+			time = 0
+			self.reloading = True
+			self.magazine = self.magazine_size
+			ammo -= self.magazine_size
+			return ammo
+		else:
+			time = 0
+			self.reloading = True
+			self.magazine = ammo
+			return 0
+
+	def update(self, time):
+		self.time += time
+		if(self.reloading):
+			if(time >= reload_time):
+				time = 0
+				self.reloading = False
 
 class Monster:
 	size = 0
@@ -125,6 +238,8 @@ class Monster:
 		return Rect(self.position[0], self.position[1], self.size, self.size)
 
 class World:
+	__model = None
+
 	monsterBank = 0
 	monsters = []
 	level = 0
@@ -133,7 +248,8 @@ class World:
 	width = 0
 	height = 0
 
-	def __init__(self, width=100, height=100):
+	def __init__(self, model, width=100, height=100):
+		self.__model = model
 		self.width = width
 		self.height = height
 		self.monsters = []
@@ -147,6 +263,8 @@ class World:
 		speed = relations.fastCurve(monster_level, 100, 350)
 		loot = self.generateLoot(monster_level)
 		m = Monster(size, position, hp, speed, money, loot)
+		for x in range(10):
+			self.__model.particleManager.addParticle(Particle(x=position[0], y=position[1]))
 		return m
 
 	def generatePositionOutside(self, x, y, width, height, padding=100):

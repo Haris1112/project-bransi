@@ -62,6 +62,10 @@ class View:
 			for monster in self.__model.world.monsters:
 				pygame.draw.rect(screen, self.gray, monster.getBounds())
 
+			#Draw Particles
+			for p in self.__model.particleManager.particles:
+				pygame.draw.circle(screen, self.gray, (int(p.pos.x), int(p.pos.y)), p.size)
+
 			# Draw Player, Cursor
 			pygame.draw.rect(screen, self.gray, self.__model.player.getBounds())
 			pygame.draw.rect(screen, self.bloodred, Rect(mouse[0], mouse[1], 2, 2))

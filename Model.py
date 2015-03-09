@@ -7,7 +7,7 @@ Website: HappyHaris.com
 GitHub: Haris1112
 '''
 
-from entity import Player, Monster, World
+from entity import *
 
 class Model:
 
@@ -19,6 +19,8 @@ class Model:
 	# Game data
 	player = None
 	world = None
+	particleManager = None
+	inventory = None
 
 	# Input data
 	up = False
@@ -32,8 +34,10 @@ class Model:
 		pass
 
 	def newGame(self, width, height):
-		self.world = World(width, height)
-		self.player = Player(self.world, 10, x=(width/2-5), y=(height/2-5), speed=250)
+		self.world = World(self, width, height)
+		self.player = Player(self, self.world, 10, x=(width/2-5), y=(height/2-5), speed=250)
+		self.inventory = Inventory()
+		self.particleManager = ParticleManager()
 		self.state = "game"
 		self.__pause = False
 
@@ -50,6 +54,7 @@ class Model:
 	def gameUpdate(self, delta):
 		if not self.__paused:
 			self.world.update(delta, (self.player.x, self.player.y))
+			self.particleManager.update(delta)
 
 	def setState(self, state):
 		self.__state = state

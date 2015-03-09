@@ -145,6 +145,9 @@ class Controller:
 			for key in self.__keys:
 				if inputs[key]:
 					self.__keys[key]()
+			pos = pygame.mouse.get_pos()
+			self.__model.mX = pos[0]
+			self.__model.mY = pos[1]					
 			mouse = pygame.mouse.get_pressed()
 			if mouse[0]:
 				self.primary()
