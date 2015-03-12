@@ -35,7 +35,7 @@ class MenuViewer(Controllable):
 	__padding = " "
 	__selector = ["> ", " >"]
 
-	#SelectorType2
+	# SelectorType2
 	__selector2B = ["[", " "] # before content
 	__selector2A = ["]", " "] # after content
 
@@ -227,4 +227,20 @@ class MenuViewer(Controllable):
 
 	@overrides(Controllable)
 	def buy(self):
+		pass
+
+	@overrides(Controllable)
+	def refresh(self):
+		pass
+
+	@overrides(Controllable)
+	def slot1(self):
+		pass
+
+	@overrides(Controllable)
+	def slot2(self):
+		pass
+
+	@overrides(Controllable)
+	def slot3(self):
 		pass

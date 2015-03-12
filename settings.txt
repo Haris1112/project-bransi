@@ -1,2 +1,2 @@
 frame_rate = 50
-hud_size = 14
+hud_size = 20

@@ -67,9 +67,18 @@ class Player(Controllable):
 		self.speed = speed
 	
 	def shoot(self):
-		x = self.__model.mX
-		y = self.__model.mY
-		self.__model.particleManager.addParticle(Particle(x=x, y=y))
+		try:
+			f = self.__model.inventory.weapon().shoot()
+		except NoneType:
+			return
+		if f >= 0:
+			x = self.__model.mX
+			y = self.__model.mY
+			damage = 1
+			effect = Particle(life=0.1, size=1, speed=2, x=x, y=y)
+			self.__model.particleManager.addParticle(effect)
+			self.__world.collide((x, y), damage)
+
 
 	def getBounds(self):
 		return Rect(self.x, self.y, self.size, self.size)
@@ -122,7 +131,7 @@ class Player(Controllable):
 
 	@overrides(Controllable)
 	def toggle(self):
-		pass
+		self.__model.inventory.nextWeapon()
 
 	@overrides(Controllable)
 	def use(self):
@@ -131,6 +140,22 @@ class Player(Controllable):
 	@overrides(Controllable)
 	def buy(self):
 		pass
+
+	@overrides(Controllable)
+	def refresh(self):
+		self.__model.inventory.reload()
+
+	@overrides(Controllable)
+	def slot1(self):
+		self.__model.inventory.selected_weapon = 0
+
+	@overrides(Controllable)
+	def slot2(self):
+		self.__model.inventory.selected_weapon = 1
+
+	@overrides(Controllable)
+	def slot3(self):
+		self.__model.inventory.selected_weapon = 2
 
 class Inventory:
 	selected_weapon = 0
@@ -142,10 +167,23 @@ class Inventory:
 		# Assault, Pistol, Grenades
 		self.weapons = [None, None, None]
 		self.ammo = [0, 0, 0]
+	
+	def slot(self, id, weapon=None):
+		if not weapon == None:
+			self.weapons[id] = weapon
+		return self.weapons[id]
+
+	def weapon(self):
+		return self.weapons[self.selected_weapon]
+
+	def reload(self):
+		w = self.weapon()
+		if not w == None:
+			self.ammo[self.selected_weapon] = w.reload(self.ammo[self.selected_weapon])
 
 	def nextWeapon(self):
 		self.selected_weapon += 1
-		if self.selected_weapon >= self.weapons.length:
+		if self.selected_weapon >= len(self.weapons):
 			self.selected_weapon = 0
 
 	def update(self, time):
@@ -160,6 +198,8 @@ class Weapon:
 	bps = -1 # Bullets per second
 	magazine = 0
 	magazine_size = 0
+	
+	time = 0
 
 	def __init__(self, ammo_type, bps, magazine_size, reload_time):
 		self.ammo_type = ammo_type
@@ -171,7 +211,7 @@ class Weapon:
 	# Returns -1 	if unable to shoot
 	#				else a number which indicates magnitude of recoil
 	def shoot(self):
-		if(self.time >= 1 / self.bps and not self.reloading):
+		if(self.time >= 1.0 / self.bps and not self.reloading):
 			if(self.magazine > 0):
 				self.time = 0
 				self.magazine -= 1
@@ -188,14 +228,16 @@ class Weapon:
 		return
 
 	def reload(self, ammo):
+		if(self.reloading or self.magazine == self.magazine_size):
+			return ammo
 		if(ammo >= self.magazine_size):
-			time = 0
+			self.time = 0
 			self.reloading = True
 			self.magazine = self.magazine_size
 			ammo -= self.magazine_size
 			return ammo
 		else:
-			time = 0
+			self.time = 0
 			self.reloading = True
 			self.magazine = ammo
 			return 0
@@ -203,9 +245,15 @@ class Weapon:
 	def update(self, time):
 		self.time += time
 		if(self.reloading):
-			if(time >= reload_time):
-				time = 0
+			if(self.time >= self.reload_time):
+				self.time = 0
 				self.reloading = False
+
+	def __str__(self):
+		if(self.reloading):
+			percent = int(self.time / self.reload_time * 10)
+			return "|" * percent + " " * (10 - percent)
+		return str(self.magazine)
 
 class Monster:
 	size = 0
@@ -234,6 +282,13 @@ class Monster:
 		if(self.position[1] > t[1]):
 			self.position[1] -= self.speed*delta
 
+	def hurt(self, force):
+		if(self.hp > 0):
+			self.hp -= force
+			if(self.hp <= 0):
+				return True
+		return False
+
 	def getBounds(self):
 		return Rect(self.position[0], self.position[1], self.size, self.size)
 
@@ -244,7 +299,6 @@ class World:
 	monsters = []
 	level = 0
 
-	player = None
 	width = 0
 	height = 0
 
@@ -254,6 +308,13 @@ class World:
 		self.height = height
 		self.monsters = []
 		self.monsterBank = 0
+
+	def collide(self, point, force):
+		for m in self.monsters:
+			if(m.getBounds().collidepoint(point)):
+				if(m.hurt(force)):
+					self.__model.player.money += m.money
+					# loot calculation
 
 	def generateMonster(self, monster_level):
 		size = random.randrange(10, 20 + 1)
@@ -322,4 +383,7 @@ class World:
 			for i in range(random.randrange(1,5)):
 				self.spawnMonster()
 		for monster in self.monsters:
-			monster.update(delta, target_position)
+			if(monster.hp <= 0):
+				self.monsters.remove(monster)
+			else:
+				monster.update(delta, target_position)

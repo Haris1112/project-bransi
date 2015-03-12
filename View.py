@@ -26,7 +26,8 @@ class View:
 	gray = Color(105, 105, 105, 255)
 	white = Color(240, 240, 240, 255)
 	bloodred = Color(240, 30, 30, 255)
-	bloodorange = Color(230, 220, 30, 255)
+	bloodyellow = Color(230, 220, 30, 255)
+	bloodorange = Color(200, 200, 50, 255)
 	
 	# Fonts
 	__font12 = None
@@ -64,7 +65,7 @@ class View:
 
 			#Draw Particles
 			for p in self.__model.particleManager.particles:
-				pygame.draw.circle(screen, self.gray, (int(p.pos.x), int(p.pos.y)), p.size)
+				pygame.draw.circle(screen, self.bloodorange, (int(p.pos.x), int(p.pos.y)), int(p.size))
 
 			# Draw Player, Cursor
 			pygame.draw.rect(screen, self.gray, self.__model.player.getBounds())
@@ -72,16 +73,22 @@ class View:
 
 			# Draw HUD
 			health = self.__font12.render("|"*self.__model.player.health, 1, self.bloodred)
-			armor = self.__font12.render("|"*self.__model.player.armor, 1, self.bloodorange)
-			money = self.__font16.render("{:,}".format(self.__model.player.money), 1, self.white)
+			armor = self.__font12.render("|"*self.__model.player.armor, 1, self.bloodyellow)
+			money = self.__font16.render("${:,}".format(self.__model.player.money), 1, self.white)
+			
+			weaponID = self.__model.inventory.selected_weapon
+			ammo = self.__model.inventory.slot(weaponID)
+			ammoMax = self.__model.inventory.ammo[weaponID]
+			weapon = self.__font12.render(str(ammo) + " / " + str(ammoMax), 1, self.white)
 			numMonsters = self.__font16.render(str(len(self.__model.world.monsters)), 1, self.white)
 
 			screen.blit(money, (10, 10))
 			screen.blit(health, (10, 10 + money.get_height()))
 			screen.blit(armor, (10, 10 + health.get_height() + money.get_height()))
+			screen.blit(weapon, (self.WIDTH - weapon.get_width() - 10, self.HEIGHT - weapon.get_height() - 10))
 			screen.blit(numMonsters, (10, self.HEIGHT - numMonsters.get_height() - 10))
 		elif self.__model.getState() == "gameOver": # Game Over
-			label = self.__font16.render("Game-Over", 1, self.bloodorange)
+			label = self.__font16.render("Game-Over", 1, self.bloodyellow)
 			screen.blit(label, (10, 100))
 
 		pygame.display.flip()

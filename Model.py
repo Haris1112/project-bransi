@@ -37,6 +37,16 @@ class Model:
 		self.world = World(self, width, height)
 		self.player = Player(self, self.world, 10, x=(width/2-5), y=(height/2-5), speed=250)
 		self.inventory = Inventory()
+
+		# Give initial items
+		self.inventory.ammo = [90, 36, 5]
+		weapon1 = Weapon(0, 15, 30, 2)
+		weapon2 = Weapon(1, 4, 12, 1)
+		weapon3 = None
+		self.inventory.slot(0, weapon1)
+		self.inventory.slot(1, weapon2)
+		self.inventory.slot(2, weapon3)
+
 		self.particleManager = ParticleManager()
 		self.state = "game"
 		self.__pause = False
@@ -54,6 +64,7 @@ class Model:
 	def gameUpdate(self, delta):
 		if not self.__paused:
 			self.world.update(delta, (self.player.x, self.player.y))
+			self.inventory.update(delta)
 			self.particleManager.update(delta)
 
 	def setState(self, state):

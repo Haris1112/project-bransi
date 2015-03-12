@@ -120,6 +120,10 @@ class Controller:
 			pygame.K_f 		: self.action,
 			pygame.K_b		: self.buy,
 			pygame.K_ESCAPE : self.escape,
+			pygame.K_r 		: self.refresh,
+			pygame.K_1		: self.slot1,
+			pygame.K_2		: self.slot2,
+			pygame.K_3		: self.slot3,
 		}
 
 		self.__titleMenuChoices = {
@@ -219,3 +223,15 @@ class Controller:
 
 	def buy(self):
 		self.__controllable.buy()
+
+	def refresh(self):
+		self.__controllable.refresh()
+
+	def slot1(self):
+		self.__controllable.slot1()
+
+	def slot2(self):
+		self.__controllable.slot2()
+
+	def slot3(self):
+		self.__controllable.slot3()
