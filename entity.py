@@ -1,5 +1,6 @@
 import relations
 import random
+import pygame
 from gameMath import *
 from pygame import Rect
 from Controllable import Controllable
@@ -74,6 +75,7 @@ class Player(Controllable):
 		if f >= 0:
 			x = self.__model.mX
 			y = self.__model.mY
+			pygame.mouse.set_pos((x + random.random()*f - f/2.0, y + random.random()*f - f/2.0))
 			damage = 1
 			effect = Particle(life=0.1, size=1, speed=2, x=x, y=y)
 			self.__model.particleManager.addParticle(effect)
@@ -302,19 +304,36 @@ class World:
 	width = 0
 	height = 0
 
+	data = []
+
 	def __init__(self, model, width=100, height=100):
 		self.__model = model
 		self.width = width
 		self.height = height
 		self.monsters = []
 		self.monsterBank = 0
+		self.data = [
+			[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
+			[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+		]
 
 	def collide(self, point, force):
 		for m in self.monsters:
 			if(m.getBounds().collidepoint(point)):
 				if(m.hurt(force)):
 					self.__model.player.money += m.money
-					# loot calculation
+					# TODO: loot calculation
 
 	def generateMonster(self, monster_level):
 		size = random.randrange(10, 20 + 1)
@@ -371,7 +390,6 @@ class World:
 		self.monsterBank -= 1
 
 	def nextLevel(self):
-		print("LEVEL: " + str(self.level))
 		self.level += 1
 		self.monsterBank += relations.fastCurve(self.level, 1, 100)
 

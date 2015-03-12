@@ -40,8 +40,8 @@ class Model:
 
 		# Give initial items
 		self.inventory.ammo = [90, 36, 5]
-		weapon1 = Weapon(0, 15, 30, 2)
-		weapon2 = Weapon(1, 4, 12, 1)
+		weapon1 = Weapon(0, 15, 30, 1.12)
+		weapon2 = Weapon(1, 4, 12, 0.7)
 		weapon3 = None
 		self.inventory.slot(0, weapon1)
 		self.inventory.slot(1, weapon2)

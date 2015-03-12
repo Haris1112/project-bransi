@@ -28,6 +28,13 @@ class View:
 	bloodred = Color(240, 30, 30, 255)
 	bloodyellow = Color(230, 220, 30, 255)
 	bloodorange = Color(200, 200, 50, 255)
+	marble = Color(195, 190, 178, 255)
+	darkmarble = Color(130, 130, 112, 255)
+
+	tiles = {
+		1:	Color(40, 124, 40, 255),
+		2: 	Color(70, 70, 71, 255),
+	}
 	
 	# Fonts
 	__font12 = None
@@ -59,16 +66,25 @@ class View:
 		if self.__model.getState() == "title" and not self.titleMenu == None:
 			screen.blit(self.titleMenu.getMenuSurface(), (0, 0))
 		elif self.__model.getState() == "game":
+			#Draw Map
+			data = self.__model.world.data
+			r = None
+			for i in range(len(data)):
+				for j in range(len(data[0])):
+					r = Rect(j*32, i*32, 32, 32)
+					pygame.draw.rect(screen, self.tiles[data[i][j]], r)
+
+
 			#Draw Monsters
 			for monster in self.__model.world.monsters:
-				pygame.draw.rect(screen, self.gray, monster.getBounds())
+				pygame.draw.rect(screen, self.darkmarble, monster.getBounds())
 
 			#Draw Particles
 			for p in self.__model.particleManager.particles:
 				pygame.draw.circle(screen, self.bloodorange, (int(p.pos.x), int(p.pos.y)), int(p.size))
 
 			# Draw Player, Cursor
-			pygame.draw.rect(screen, self.gray, self.__model.player.getBounds())
+			pygame.draw.rect(screen, self.marble, self.__model.player.getBounds())
 			pygame.draw.rect(screen, self.bloodred, Rect(mouse[0], mouse[1], 2, 2))
 
 			# Draw HUD

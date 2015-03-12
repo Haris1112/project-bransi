@@ -16,8 +16,8 @@ class Controller:
 	'''
 	HARD SETTINGS
 	'''
-	WIDTH = 540
-	HEIGHT = 420
+	WIDTH = 544
+	HEIGHT = 416
 	__SETTINGS_FILE = "settings.txt"
 	__keys = {}
 	__titleMenuChoices = {}
