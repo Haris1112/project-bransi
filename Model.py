@@ -22,6 +22,8 @@ class Model:
 	particleManager = None
 	inventory = None
 
+	TILE_SIZE = 32
+
 	# Input data
 	up = False
 	down = False
@@ -35,13 +37,13 @@ class Model:
 
 	def newGame(self, width, height):
 		self.world = World(self, width, height)
-		self.player = Player(self, self.world, 10, x=(width/2-5), y=(height/2-5), speed=250)
+		self.player = Player(self, self.world, 10, x=(width/2/self.TILE_SIZE-5), y=(height/2/self.TILE_SIZE-5), speed=10)
 		self.inventory = Inventory()
 
 		# Give initial items
-		self.inventory.ammo = [90, 36, 5]
-		weapon1 = Weapon(0, 15, 30, 1.12)
-		weapon2 = Weapon(1, 4, 12, 0.7)
+		self.inventory.ammo = [190, 36, 5]
+		weapon1 = Weapon(0, 15, 130, 1.12)
+		weapon2 = Weapon(1, 4, 12, 0.71)
 		weapon3 = None
 		self.inventory.slot(0, weapon1)
 		self.inventory.slot(1, weapon2)

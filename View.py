@@ -91,7 +91,7 @@ class View:
 			health = self.__font12.render("|"*self.__model.player.health, 1, self.bloodred)
 			armor = self.__font12.render("|"*self.__model.player.armor, 1, self.bloodyellow)
 			money = self.__font16.render("${:,}".format(self.__model.player.money), 1, self.white)
-			
+
 			weaponID = self.__model.inventory.selected_weapon
 			ammo = self.__model.inventory.slot(weaponID)
 			ammoMax = self.__model.inventory.ammo[weaponID]
@@ -103,6 +103,16 @@ class View:
 			screen.blit(armor, (10, 10 + health.get_height() + money.get_height()))
 			screen.blit(weapon, (self.WIDTH - weapon.get_width() - 10, self.HEIGHT - weapon.get_height() - 10))
 			screen.blit(numMonsters, (10, self.HEIGHT - numMonsters.get_height() - 10))
+
+			# DEBUG
+			#path_data = self.__model.world.path_data
+			#for i in range(len(path_data)):
+			#	for j in range(len(path_data[0])):
+			#		lbl = self.__font16.render(str(path_data[i][j]), 1, self.white)
+			#		pos = (j*32, i*32)
+			#		screen.blit(lbl, pos)
+
+
 		elif self.__model.getState() == "gameOver": # Game Over
 			label = self.__font16.render("Game-Over", 1, self.bloodyellow)
 			screen.blit(label, (10, 100))

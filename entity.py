@@ -83,7 +83,7 @@ class Player(Controllable):
 
 
 	def getBounds(self):
-		return Rect(self.x, self.y, self.size, self.size)
+		return Rect(self.x*self.__model.TILE_SIZE, self.y*self.__model.TILE_SIZE, self.size, self.size)
 
 	def update(self, input, delta, world):
 		pass
@@ -104,8 +104,8 @@ class Player(Controllable):
 	@overrides(Controllable)
 	def down(self):
 		self.y += self.speed*self.__delta
-		if(self.y > self.__world.height):
-			self.y = self.__world.height - self.size
+		if(self.y > self.__world.height/self.__model.TILE_SIZE-self.size):
+			self.y = self.__world.height/self.__model.TILE_SIZE - self.size
 
 	@overrides(Controllable)
 	def left(self):
@@ -116,8 +116,8 @@ class Player(Controllable):
 	@overrides(Controllable)
 	def right(self):
 		self.x += self.speed*self.__delta
-		if(self.x > self.__world.width):
-			self.x = self.__world.width - self.size
+		if(self.x > self.__world.width/self.__model.TILE_SIZE-self.size):
+			self.x = self.__world.width/self.__model.TILE_SIZE-self.size
 
 	@overrides(Controllable)
 	def primary(self):
@@ -258,6 +258,8 @@ class Weapon:
 		return str(self.magazine)
 
 class Monster:
+	TILE_SIZE = 32 
+
 	size = 0
 	position = []
 	hp = 0
@@ -284,6 +286,8 @@ class Monster:
 		if(self.position[1] > t[1]):
 			self.position[1] -= self.speed*delta
 
+		print(self.position[0], self.position[1])
+
 	def hurt(self, force):
 		if(self.hp > 0):
 			self.hp -= force
@@ -292,7 +296,7 @@ class Monster:
 		return False
 
 	def getBounds(self):
-		return Rect(self.position[0], self.position[1], self.size, self.size)
+		return Rect(self.position[0]*self.TILE_SIZE, self.position[1]*self.TILE_SIZE, self.size, self.size)
 
 class World:
 	__model = None
@@ -305,6 +309,7 @@ class World:
 	height = 0
 
 	data = []
+	path_data = []
 
 	def __init__(self, model, width=100, height=100):
 		self.__model = model
@@ -327,6 +332,24 @@ class World:
 			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
 			[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
 		]
+		self.path_data = []
+
+	def reset_path_data(self):
+		self.path_data = [
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+		]
 
 	def collide(self, point, force):
 		for m in self.monsters:
@@ -335,19 +358,40 @@ class World:
 					self.__model.player.money += m.money
 					# TODO: loot calculation
 
+	def computePathData(self, playerX, playerY):
+		self.reset_path_data()
+		# Begin with first 'node' as player position
+		self.__assignValue(int(playerX), int(playerY), 0)
+
+
+	def __assignValue(self, x, y, val):
+		t1 = pygame.time.get_ticks()
+		if not x < 0 and not y < 0 and not x >= len(self.path_data[0]) and not y >= len(self.path_data):		
+			if(self.data[y][x] == 2 or (self.path_data[y][x] <= val and not self.path_data[y][x] == -1)):
+				return
+			self.path_data[y][x] = val
+			if not x == 0:
+				self.__assignValue(x-1, y, val+1)
+			if not x == len(self.path_data[0]) - 1:
+				self.__assignValue(x+1, y, val+1)
+			if not y == 0:
+				self.__assignValue(x, y-1, val+1)
+			if not y == len(self.path_data) - 1:
+				self.__assignValue(x, y+1, val+1)
+		t2 = pygame.time.get_ticks()
+
 	def generateMonster(self, monster_level):
 		size = random.randrange(10, 20 + 1)
-		position = self.generatePositionOutside(0, 0, self.width, self.height)
+		position = [1, 0]
 		hp = relations.linear(monster_level, 1, 42)
 		money = relations.linear(monster_level, 1, 1000)
-		speed = relations.fastCurve(monster_level, 100, 350)
+		speed = relations.fastCurve(monster_level, 5, 22)
 		loot = self.generateLoot(monster_level)
 		m = Monster(size, position, hp, speed, money, loot)
-		for x in range(10):
-			self.__model.particleManager.addParticle(Particle(x=position[0], y=position[1]))
 		return m
 
-	def generatePositionOutside(self, x, y, width, height, padding=100):
+	# @deprecated
+	def generatePositionOutside(self, x, y, width, height, padding=10):
 		w = width
 		h = height
 		p = padding
@@ -392,6 +436,13 @@ class World:
 	def nextLevel(self):
 		self.level += 1
 		self.monsterBank += relations.fastCurve(self.level, 1, 100)
+		
+		# Sparkle effect :)
+		x = self.__model.player.x*32 #tileSIZE
+		y = self.__model.player.y*32 #tileSIZE
+		print(x,y)
+		for z in range(10):
+			self.__model.particleManager.addParticle(Particle(x=x, y=y))
 
 	# delta is in seconds
 	def update(self, delta, target_position):
@@ -405,3 +456,4 @@ class World:
 				self.monsters.remove(monster)
 			else:
 				monster.update(delta, target_position)
+		self.computePathData(self.__model.player.x, self.__model.player.y)
