@@ -1,2 +1,3 @@
-frame_rate = 50
+frame_rate = 30
 hud_size = 20
+debug = 0

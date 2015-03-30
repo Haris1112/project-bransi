@@ -103,6 +103,8 @@ class Controller:
 
 				# print(("FPS:" + str(self.__fps)), "UPS:" + str(self.__ups))
 
+	def getFPS(self):
+		return self.__fps
 
 	def __loadSettings(self, fileName):
 		# HARD CODED SETTINGS

@@ -18,6 +18,10 @@ class View:
 	WIDTH = 0
 	HEIGHT = 0
 
+	# Map
+	xOffset = 32
+	yOffset = 32
+
 	# Screens
 	titleMenu = None
 	
@@ -71,20 +75,20 @@ class View:
 			r = None
 			for i in range(len(data)):
 				for j in range(len(data[0])):
-					r = Rect(j*32, i*32, 32, 32)
+					r = Rect(j*32 + self.xOffset, i*32 + self.yOffset, 32, 32)
 					pygame.draw.rect(screen, self.tiles[data[i][j]], r)
 
 
 			#Draw Monsters
 			for monster in self.__model.world.monsters:
-				pygame.draw.rect(screen, self.darkmarble, monster.getBounds())
+				pygame.draw.rect(screen, self.darkmarble, monster.getBounds(self.xOffset, self.yOffset))
 
 			#Draw Particles
 			for p in self.__model.particleManager.particles:
-				pygame.draw.circle(screen, self.bloodorange, (int(p.pos.x), int(p.pos.y)), int(p.size))
+				pygame.draw.circle(screen, self.bloodorange, (int(p.pos.x)+self.xOffset, int(p.pos.y)+self.yOffset), int(p.size))
 
 			# Draw Player, Cursor
-			pygame.draw.rect(screen, self.marble, self.__model.player.getBounds())
+			pygame.draw.rect(screen, self.marble, self.__model.player.getBounds(self.xOffset, self.yOffset))
 			pygame.draw.rect(screen, self.bloodred, Rect(mouse[0], mouse[1], 2, 2))
 
 			# Draw HUD
@@ -105,6 +109,11 @@ class View:
 			screen.blit(numMonsters, (10, self.HEIGHT - numMonsters.get_height() - 10))
 
 			# DEBUG
+			print("FPS" + str(controller.getFPS()))
+			lbl = self.__font16.render("FPS " + str(controller.getFPS()), 1, self.white)
+			pos = (32*0, 32*17)
+			screen.blit(lbl, pos)
+			
 			#path_data = self.__model.world.path_data
 			#for i in range(len(path_data)):
 			#	for j in range(len(path_data[0])):

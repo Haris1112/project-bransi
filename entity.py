@@ -1,6 +1,7 @@
 import relations
 import random
 import pygame
+import math
 from gameMath import *
 from pygame import Rect
 from Controllable import Controllable
@@ -82,11 +83,8 @@ class Player(Controllable):
 			self.__world.collide((x, y), damage)
 
 
-	def getBounds(self):
-		return Rect(self.x*self.__model.TILE_SIZE, self.y*self.__model.TILE_SIZE, self.size, self.size)
-
-	def update(self, input, delta, world):
-		pass
+	def getBounds(self, xOffset, yOffset):
+		return Rect(self.x*self.__model.TILE_SIZE + xOffset, self.y*self.__model.TILE_SIZE + yOffset, self.size, self.size)
 
 	def getAngle(self, mouseX, mouseY):
 		pass
@@ -97,15 +95,17 @@ class Player(Controllable):
 
 	@overrides(Controllable)
 	def up(self):
-		self.y -= self.speed*self.__delta
-		if(self.y < 0):
-			self.y = 0
+		if not self.__model.world.data[int(self.y)][int(self.x)] == 2:
+			self.y -= self.speed*self.__delta
+			if(self.y < 0):
+				self.y = 0
 
 	@overrides(Controllable)
 	def down(self):
-		self.y += self.speed*self.__delta
-		if(self.y > self.__world.height/self.__model.TILE_SIZE-self.size):
-			self.y = self.__world.height/self.__model.TILE_SIZE - self.size
+		if not self.__model.world.data[int(math.ceil(self.y+(32-self.size)/32))][int(self.x)] == 2:
+			self.y += self.speed*self.__delta
+			if(self.y > self.__world.height/self.__model.TILE_SIZE - self.size/32.0):
+				self.y = self.__world.height/self.__model.TILE_SIZE - self.size/32.0
 
 	@overrides(Controllable)
 	def left(self):
@@ -116,8 +116,8 @@ class Player(Controllable):
 	@overrides(Controllable)
 	def right(self):
 		self.x += self.speed*self.__delta
-		if(self.x > self.__world.width/self.__model.TILE_SIZE-self.size):
-			self.x = self.__world.width/self.__model.TILE_SIZE-self.size
+		if(self.x > self.__world.width/self.__model.TILE_SIZE - self.size/32.0):
+			self.x = self.__world.width/self.__model.TILE_SIZE - (self.size)/32.0
 
 	@overrides(Controllable)
 	def primary(self):
@@ -286,8 +286,6 @@ class Monster:
 		if(self.position[1] > t[1]):
 			self.position[1] -= self.speed*delta
 
-		print(self.position[0], self.position[1])
-
 	def hurt(self, force):
 		if(self.hp > 0):
 			self.hp -= force
@@ -295,8 +293,8 @@ class Monster:
 				return True
 		return False
 
-	def getBounds(self):
-		return Rect(self.position[0]*self.TILE_SIZE, self.position[1]*self.TILE_SIZE, self.size, self.size)
+	def getBounds(self, xOffset, yOffset):
+		return Rect(self.position[0]*self.TILE_SIZE + xOffset, self.position[1]*self.TILE_SIZE + yOffset, self.size, self.size)
 
 class World:
 	__model = None
@@ -318,37 +316,32 @@ class World:
 		self.monsters = []
 		self.monsterBank = 0
 		self.data = [
-			[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
-			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
-			[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+			[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
 		]
-		self.path_data = []
 
 	def reset_path_data(self):
 		self.path_data = [
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
+			[128,128,128,128,128,128,128,128,128,128,128,128,128,128,128],
 		]
 
 	def collide(self, point, force):
@@ -359,26 +352,22 @@ class World:
 					# TODO: loot calculation
 
 	def computePathData(self, playerX, playerY):
+		t1 = pygame.time.get_ticks()
 		self.reset_path_data()
+
 		# Begin with first 'node' as player position
 		self.__assignValue(int(playerX), int(playerY), 0)
-
+		t2 = pygame.time.get_ticks()
+		print(t2-t1)
 
 	def __assignValue(self, x, y, val):
-		t1 = pygame.time.get_ticks()
-		if not x < 0 and not y < 0 and not x >= len(self.path_data[0]) and not y >= len(self.path_data):		
-			if(self.data[y][x] == 2 or (self.path_data[y][x] <= val and not self.path_data[y][x] == -1)):
-				return
-			self.path_data[y][x] = val
-			if not x == 0:
-				self.__assignValue(x-1, y, val+1)
-			if not x == len(self.path_data[0]) - 1:
-				self.__assignValue(x+1, y, val+1)
-			if not y == 0:
-				self.__assignValue(x, y-1, val+1)
-			if not y == len(self.path_data) - 1:
-				self.__assignValue(x, y+1, val+1)
-		t2 = pygame.time.get_ticks()
+		if(self.data[y][x] == 2 or self.path_data[y][x] <= val):
+			return
+		self.path_data[y][x] = val
+		self.__assignValue(x-1, y, val+1)
+		self.__assignValue(x+1, y, val+1)
+		self.__assignValue(x, y-1, val+1)
+		self.__assignValue(x, y+1, val+1)
 
 	def generateMonster(self, monster_level):
 		size = random.randrange(10, 20 + 1)
@@ -420,7 +409,6 @@ class World:
 		y = random.randrange(rect[2], rect[3] + 1)
 		
 		return [x, y]
-
 
 	def generateLoot(self, monsterLevel):
 		return None # TODO FIXME
