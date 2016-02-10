@@ -24,7 +24,7 @@ class View:
 
 	# Screens
 	titleMenu = None
-	
+
 	# Colours
 	black = Color(15, 15 ,15, 255)
 	gray = Color(105, 105, 105, 255)
@@ -39,7 +39,7 @@ class View:
 		1:	Color(40, 124, 40, 255),
 		2: 	Color(70, 70, 71, 255),
 	}
-	
+
 	# Fonts
 	__font12 = None
 	__font16 = None
@@ -109,11 +109,10 @@ class View:
 			screen.blit(numMonsters, (10, self.HEIGHT - numMonsters.get_height() - 10))
 
 			# DEBUG
-			print("FPS" + str(controller.getFPS()))
 			lbl = self.__font16.render("FPS " + str(controller.getFPS()), 1, self.white)
 			pos = (32*0, 32*17)
 			screen.blit(lbl, pos)
-			
+
 			#path_data = self.__model.world.path_data
 			#for i in range(len(path_data)):
 			#	for j in range(len(path_data[0])):

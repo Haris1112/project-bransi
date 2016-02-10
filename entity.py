@@ -49,8 +49,8 @@ class Particle:
 class Player(Controllable):
 	speed = 0
 	size = 0
-	x = 0
-	y = 0
+	x = 0				# unit: tile
+	y = 0				# unit: tile
 
 	money = 16000
 	health = 10
@@ -67,20 +67,26 @@ class Player(Controllable):
 		self.x = x
 		self.y = y
 		self.speed = speed
-	
+
 	def shoot(self):
-		try:
+		if(not self.__model.inventory.weapon() == None):
 			f = self.__model.inventory.weapon().shoot()
-		except NoneType:
-			return
-		if f >= 0:
+			if f >= 0:
+				x = self.__model.mX
+				y = self.__model.mY
+				pygame.mouse.set_pos((x + random.random()*f - f/2.0, y + random.random()*f - f/2.0))
+				damage = 1
+				effect = Particle(life=0.1, size=1, speed=2, x=x-32, y=y-32)
+				self.__model.particleManager.addParticle(effect)
+				self.__world.collide((x, y), damage)
+		else:
+			f = 0
 			x = self.__model.mX
 			y = self.__model.mY
-			pygame.mouse.set_pos((x + random.random()*f - f/2.0, y + random.random()*f - f/2.0))
-			damage = 1
-			effect = Particle(life=0.1, size=1, speed=2, x=x, y=y)
-			self.__model.particleManager.addParticle(effect)
-			self.__world.collide((x, y), damage)
+			damage = 99
+			for z in range(20):
+				self.__model.particleManager.addParticle(Particle(size=2, life=0.5, x=x, y=y))
+				self.__world.collide((x, y), damage);
 
 
 	def getBounds(self, xOffset, yOffset):
@@ -95,36 +101,38 @@ class Player(Controllable):
 
 	@overrides(Controllable)
 	def up(self):
-		if not self.__model.world.data[int(self.y)][int(self.x)] == 2:
+		if(self.__world.canWalk(int(self.x), int(self.y-self.speed*self.__delta))):
 			self.y -= self.speed*self.__delta
 			if(self.y < 0):
 				self.y = 0
 
 	@overrides(Controllable)
 	def down(self):
-		if not self.__model.world.data[int(math.ceil(self.y+(32-self.size)/32))][int(self.x)] == 2:
+		if(self.__world.canWalk(int(self.x), int(self.y+self.speed*self.__delta))):
 			self.y += self.speed*self.__delta
-			if(self.y > self.__world.height/self.__model.TILE_SIZE - self.size/32.0):
-				self.y = self.__world.height/self.__model.TILE_SIZE - self.size/32.0
+			if(self.y > len(self.__world.data)):
+				self.y = len(self.__world.data) - self.size/32.0
 
 	@overrides(Controllable)
 	def left(self):
-		self.x -= self.speed*self.__delta
-		if(self.x < 0):
-			self.x = 0
+		if(self.__world.canWalk(int(self.x-self.speed*self.__delta), int(self.y))):
+			self.x -= self.speed*self.__delta
+			if(self.x < 0):
+				self.x = 0
 
 	@overrides(Controllable)
 	def right(self):
-		self.x += self.speed*self.__delta
-		if(self.x > self.__world.width/self.__model.TILE_SIZE - self.size/32.0):
-			self.x = self.__world.width/self.__model.TILE_SIZE - (self.size)/32.0
+		if(self.__world.canWalk(int(self.x+self.speed*self.__delta), int(self.y))):
+			self.x += self.speed*self.__delta
+			if(self.x > len(self.__world.data[0])):
+				self.x = len(self.__world.data[0]) - self.size/32.0
 
 	@overrides(Controllable)
 	def primary(self):
 		self.shoot()
 
 	@overrides(Controllable)
-	def secondary(self):	
+	def secondary(self):
 		pass
 
 	@overrides(Controllable)
@@ -169,7 +177,7 @@ class Inventory:
 		# Assault, Pistol, Grenades
 		self.weapons = [None, None, None]
 		self.ammo = [0, 0, 0]
-	
+
 	def slot(self, id, weapon=None):
 		if not weapon == None:
 			self.weapons[id] = weapon
@@ -190,7 +198,7 @@ class Inventory:
 
 	def update(self, time):
 		for w in self.weapons:
-			if(w is not None): 
+			if(w is not None):
 				w.update(time)
 
 class Weapon:
@@ -200,7 +208,7 @@ class Weapon:
 	bps = -1 # Bullets per second
 	magazine = 0
 	magazine_size = 0
-	
+
 	time = 0
 
 	def __init__(self, ammo_type, bps, magazine_size, reload_time):
@@ -209,7 +217,7 @@ class Weapon:
 		self.bps = bps
 		self.magazine = 0
 		self.magazine_size = magazine_size
-				
+
 	# Returns -1 	if unable to shoot
 	#				else a number which indicates magnitude of recoil
 	def shoot(self):
@@ -258,7 +266,7 @@ class Weapon:
 		return str(self.magazine)
 
 class Monster:
-	TILE_SIZE = 32 
+	TILE_SIZE = 32
 
 	size = 0
 	position = []
@@ -266,7 +274,7 @@ class Monster:
 	speed = 0
 	money = 0
 	loot = None
-	
+
 	def __init__(self, size, position, hp, speed, money, loot):
 		self.size = size
 		self.position = position
@@ -322,7 +330,7 @@ class World:
 			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
 			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
 			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
-			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+			[2,1,1,1,1,1,1,2,1,1,1,1,1,1,2],
 			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
 			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
 			[2,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
@@ -346,10 +354,15 @@ class World:
 
 	def collide(self, point, force):
 		for m in self.monsters:
-			if(m.getBounds().collidepoint(point)):
+			if(m.getBounds(32, 32).collidepoint(point)):
 				if(m.hurt(force)):
 					self.__model.player.money += m.money
 					# TODO: loot calculation
+
+	def canWalk(self, tileX, tileY):
+		if(self.data[tileY][tileX] == 2):
+			return False
+		return True
 
 	def computePathData(self, playerX, playerY):
 		t1 = pygame.time.get_ticks()
@@ -358,10 +371,9 @@ class World:
 		# Begin with first 'node' as player position
 		self.__assignValue(int(playerX), int(playerY), 0)
 		t2 = pygame.time.get_ticks()
-		print(t2-t1)
 
 	def __assignValue(self, x, y, val):
-		if(self.data[y][x] == 2 or self.path_data[y][x] <= val):
+		if(x < 0 or x >= len(self.data[0]) or y < 0 or y >= len(self.data) or self.data[y][x] == 2 or self.path_data[y][x] <= val):
 			return
 		self.path_data[y][x] = val
 		self.__assignValue(x-1, y, val+1)
@@ -407,7 +419,7 @@ class World:
 
 		x = random.randrange(rect[0], rect[1] + 1)
 		y = random.randrange(rect[2], rect[3] + 1)
-		
+
 		return [x, y]
 
 	def generateLoot(self, monsterLevel):
@@ -424,11 +436,10 @@ class World:
 	def nextLevel(self):
 		self.level += 1
 		self.monsterBank += relations.fastCurve(self.level, 1, 100)
-		
+
 		# Sparkle effect :)
 		x = self.__model.player.x*32 #tileSIZE
 		y = self.__model.player.y*32 #tileSIZE
-		print(x,y)
 		for z in range(10):
 			self.__model.particleManager.addParticle(Particle(x=x, y=y))
 

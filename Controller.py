@@ -12,20 +12,19 @@ from MenuViewer import MenuViewer
 from pygame.locals import *
 
 class Controller:
-	
-	'''
-	HARD SETTINGS
-	'''
+	# Display settings
 	WIDTH = 544
 	HEIGHT = 416
-	__SETTINGS_FILE = "settings.txt"
-	__keys = {}
+
+	# Configuration Settings
+	__SETTINGS_FILE = "settings.txt"	# Settings file location
+	__keys = {}							# Keyboard keys
 	__titleMenuChoices = {}
-	__settings = {}
+	__settings = {}						# Settings loaded from file
 
 	__model = None
 	__view = None
-	__controllable = None # input object
+	__controllable = None 				# input object
 
 	#Controllables
 	__titleMenuController = None
@@ -49,16 +48,19 @@ class Controller:
 		self.__titleMenuController = MenuViewer("Project Bransi", self.__titleMenuChoices, int(self.__settings['hud_size']), selectorType=1)
 		self.__view.ready(self.WIDTH, self.HEIGHT, self.__titleMenuController)
 		self.__setState("title")
-		
+
 		self.__gameLoop()
 
 	def __newGame(self):
 		self.__model.newGame(self.WIDTH, self.HEIGHT)
 		self.__setState("game")
 
+	def getFPS(self):
+		return self.__fps
+
 	def __gameLoop(self):
 		# This is an edited version of the following general game loop:
-		# http://entitycrisis.blogspot.ca/2007/07/general-pygame-main-loop.html   
+		# http://entitycrisis.blogspot.ca/2007/07/general-pygame-main-loop.html
 		frame_rate = int(self.__settings['frame_rate'])
 
 		step_size = 1.0 / frame_rate * 1000.0 # ms
@@ -103,8 +105,6 @@ class Controller:
 
 				# print(("FPS:" + str(self.__fps)), "UPS:" + str(self.__ups))
 
-	def getFPS(self):
-		return self.__fps
 
 	def __loadSettings(self, fileName):
 		# HARD CODED SETTINGS
@@ -143,7 +143,6 @@ class Controller:
 
 		self.__settings = data
 
-	''' INPUT '''
 	def __manageInput(self, time):
 		if not self.__controllable == None:
 			self.__controllable.tick(time)
@@ -153,7 +152,7 @@ class Controller:
 					self.__keys[key]()
 			pos = pygame.mouse.get_pos()
 			self.__model.mX = pos[0]
-			self.__model.mY = pos[1]					
+			self.__model.mY = pos[1]
 			mouse = pygame.mouse.get_pressed()
 			if mouse[0]:
 				self.primary()
@@ -187,6 +186,7 @@ class Controller:
 		pygame.mouse.set_pos((x, y))
 
 	def getMousePosition(self):
+		mousePosition = (pygame.mouse.get_pos()[0]-32, pygame.mouse.get_pos()[1]-32);
 		return pygame.mouse.get_pos()
 
 	def __keyPressed(self, key):
